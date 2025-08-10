@@ -4,6 +4,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
 
 # Función para calcular rieles
 def calcular_riel_montaje(n_paneles, ancho_panel, largo_riel):
@@ -74,8 +75,9 @@ def generar_lista_compra(p):
     }
 
 # Función para exportar PDF
-def exportar_pdf(df, filename="lista_compra.pdf"):
-    doc = SimpleDocTemplate(filename, pagesize=A4)
+def exportar_pdf(df):
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
     styles = getSampleStyleSheet()
     elements = []
 
@@ -93,6 +95,8 @@ def exportar_pdf(df, filename="lista_compra.pdf"):
     ]))
     elements.append(table)
     doc.build(elements)
+    buffer.seek(0)
+    return buffer
 
 # Interfaz Streamlit
 st.title("🔧 Cubicación FV Offgrid – Bomba de Riego")
@@ -114,6 +118,5 @@ if st.button("📊 Generar lista de compra"):
     df = pd.DataFrame(list(lista.items()), columns=["Elemento", "Cantidad"])
     st.dataframe(df)
 
-    exportar_pdf(df)
-    with open("lista_compra.pdf", "rb") as f:
-        st.download_button("📥 Descargar PDF", f, file_name="lista_compra.pdf")
+    pdf_buffer = exportar_pdf(df)
+    st.download_button("📥 Descargar PDF", pdf_buffer, file_name="lista_compra.pdf")
